@@ -26,6 +26,8 @@
 
 ## 📸 界面预览
 
+![Dashboard Preview](docs/images/dashboard.png)
+
 |    仪表盘 (Dashboard)    | 转发规则 (Forwarding Rules)  |
 | :----------------------: | :--------------------------: |
 |                          |                              |
