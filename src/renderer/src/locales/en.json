@@ -1,0 +1,38 @@
+{
+  "app": {
+    "name": "Ghosxy",
+    "core": "Core"
+  },
+  "nav": {
+    "home": "Home",
+    "rules": "Forwarding Rules",
+    "providers": "Service Providers",
+    "logs": "System Logs",
+    "settings": "Settings"
+  },
+  "settings": {
+    "title": "App Settings",
+    "subtitle": "Manage global preferences and appearance.",
+    "language": "Language",
+    "theme": "Appearance",
+    "theme_light": "Light",
+    "theme_dark": "Dark",
+    "theme_system": "System",
+    "auto_start": "Launch at Login",
+    "auto_update": "Auto Check Updates",
+    "silent_start": "Silent Start",
+    "silent_start_desc": "Start minimized to tray",
+    "tray_behavior": "Tray Click Behavior",
+    "tray_show": "Always Show",
+    "tray_toggle": "Toggle Show/Hide",
+    "footer": "Made with ❤️ by You"
+  },
+  "providers": {
+    "title": "Providers",
+    "add_btn": "Add Provider",
+    "table_name": "Name",
+    "table_url": "Base URL",
+    "secured": "Secured",
+    "no_auth": "No Auth"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "app": {
+    "name": "Ghosxy",
+    "core": "内核"
+  },
+  "nav": {
+    "home": "仪表盘",
+    "rules": "转发规则",
+    "providers": "服务提供商",
+    "logs": "运行日志",
+    "settings": "系统设置"
+  },
+  "settings": {
+    "title": "应用设置",
+    "subtitle": "管理应用的全局行为与外观。",
+    "language": "界面语言",
+    "theme": "外观主题",
+    "theme_light": "亮色",
+    "theme_dark": "暗色",
+    "theme_system": "跟随系统",
+    "auto_start": "开机自启",
+    "auto_update": "自动检查更新",
+    "silent_start": "静默启动",
+    "silent_start_desc": "启动时不显示主窗口",
+    "tray_behavior": "托盘点击行为",
+    "tray_show": "总是显示",
+    "tray_toggle": "切换显示/隐藏",
+    "footer": "由你 ❤️ 制作"
+  },
+  "providers": {
+    "title": "服务提供商",
+    "add_btn": "新增渠道",
+    "table_name": "名称",
+    "table_url": "接口地址",
+    "secured": "已加密",
+    "no_auth": "无认证"
+  }
+}
