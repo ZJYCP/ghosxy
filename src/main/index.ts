@@ -10,11 +10,15 @@ import { storeService } from './services/StoreService'
 import { logService } from './services/LogService'
 
 function createWindow(): void {
+  // 设置窗口图标 (Linux 和 Windows 需要手动设置,macOS 使用 .icns 文件)
+  const iconPath = path.join(__dirname, '../../resources/icon.png')
+
   const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+    width: 950,
+    height: 700,
     show: false,
     autoHideMenuBar: true,
+    icon: iconPath, // Windows 和 Linux 使用
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
       sandbox: false
