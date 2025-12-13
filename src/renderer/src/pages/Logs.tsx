@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Trash2, FolderOpen, Copy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -7,6 +8,7 @@ import { LogEntry } from 'src/shared/types'
 import { cn } from '@/lib/utils'
 
 export function LogsPage() {
+  const { t } = useTranslation()
   const [logs, setLogs] = useState<LogEntry[]>([])
   const viewportRef = useRef<HTMLDivElement>(null)
   const [autoScroll, setAutoScroll] = useState(false) // 默认关闭自动滚动,因为最新日志在顶部
@@ -40,10 +42,10 @@ export function LogsPage() {
   }, [logs, autoScroll])
 
   const handleClear = async () => {
-    if (!confirm('Clear all logs?')) return
+    if (!confirm(t('logs.clear_confirm'))) return
     await window.electronAPI.clearLogs()
     setLogs([])
-    toast.success('Logs cleared')
+    toast.success(t('logs.messages.cleared'))
   }
 
   const handleOpenFolder = () => window.electronAPI.openLogFolder()
@@ -51,7 +53,7 @@ export function LogsPage() {
   const handleCopy = () => {
     const text = logs.map((l) => `[${l.timestamp}] [${l.level}] ${l.text}`).join('\n')
     navigator.clipboard.writeText(text)
-    toast.success('Logs copied')
+    toast.success(t('logs.messages.copied'))
   }
 
   // Helper 1: 安全的时间格式化 (修复报错的核心)
@@ -93,20 +95,18 @@ export function LogsPage() {
       {/* Header */}
       <div className="flex items-center justify-between shrink-0">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">System Logs</h2>
-          <p className="text-muted-foreground text-sm mt-1">
-            Real-time execution logs for debugging.
-          </p>
+          <h2 className="text-2xl font-bold text-foreground">{t('logs.title')}</h2>
+          <p className="text-muted-foreground text-sm mt-1">{t('logs.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={handleOpenFolder}>
-            <FolderOpen className="w-4 h-4 mr-2" /> Local
+            <FolderOpen className="w-4 h-4 mr-2" /> {t('logs.local')}
           </Button>
           <Button variant="outline" size="sm" onClick={handleCopy}>
-            <Copy className="w-4 h-4 mr-2" /> Copy
+            <Copy className="w-4 h-4 mr-2" /> {t('logs.copy')}
           </Button>
           <Button variant="destructive" size="sm" onClick={handleClear}>
-            <Trash2 className="w-4 h-4 mr-2" /> Clear
+            <Trash2 className="w-4 h-4 mr-2" /> {t('logs.clear')}
           </Button>
         </div>
       </div>
@@ -120,12 +120,12 @@ export function LogsPage() {
             <div className="w-3 h-3 rounded-full bg-yellow-500/20 border border-yellow-500/50"></div>
             <div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/50"></div>
           </div>
-          <div className="text-[10px] text-zinc-500 font-mono">main.log</div>
+          <div className="text-[10px] text-zinc-500 font-mono">{t('logs.file_name')}</div>
           <div
             className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
             onClick={() => setAutoScroll(!autoScroll)}
           >
-            <span className="text-[10px] text-zinc-500">Auto-scroll</span>
+            <span className="text-[10px] text-zinc-500">{t('logs.auto_scroll')}</span>
             <div
               className={cn('w-2 h-2 rounded-full', autoScroll ? 'bg-green-500' : 'bg-zinc-700')}
             />
@@ -138,7 +138,7 @@ export function LogsPage() {
             <div className="p-4 font-mono text-xs space-y-1">
               {logs.length === 0 ? (
                 <div className="flex flex-col items-center justify-center pt-20 text-zinc-700 space-y-2 opacity-50">
-                  <p>No logs available</p>
+                  <p>{t('logs.no_logs')}</p>
                 </div>
               ) : (
                 logs.map((log, index) => (

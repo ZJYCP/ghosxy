@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   ShieldCheck,
   ShieldAlert,
@@ -21,6 +22,7 @@ import { cn } from '@/lib/utils'
 import { Rule } from 'src/shared/types'
 
 export function HomePage() {
+  const { t } = useTranslation()
   const [proxyRunning, setProxyRunning] = useState(false)
   const [caGenerated, setCaGenerated] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -71,7 +73,7 @@ export function HomePage() {
       if (checked) {
         // 开启代理服务
         await window.electronAPI.startProxy()
-        toast.success('Proxy Engine Started')
+        toast.success(t('home.proxy.started'))
 
         // 注意：这里建议提醒用户去 Rules 页面检查 Hosts 状态，
         // 或者在这里做一个批量检查并提示
@@ -80,11 +82,11 @@ export function HomePage() {
         // await handleSyncAllHosts()
       } else {
         await window.electronAPI.stopProxy()
-        toast.success('Proxy Engine Stopped')
+        toast.success(t('home.proxy.stopped'))
       }
       await refreshData()
     } catch (e: any) {
-      toast.error('Operation failed: ' + e.message)
+      toast.error(t('home.proxy.start_failed') + ': ' + e.message)
     } finally {
       setLoading(false)
     }
@@ -102,10 +104,10 @@ export function HomePage() {
       // 正确的做法是：调用 window.electronAPI.updateHost(domain, '127.0.0.1')
       // 假设你已经按照之前的建议完善了 IPC
 
-      toast.success(`Hosts updated for ${domain}`)
+      toast.success(`${t('home.interception.hosts_updated')} ${domain}`)
       await refreshData()
     } catch (e) {
-      toast.error('Failed to update hosts')
+      toast.error(t('home.interception.hosts_update_failed'))
     } finally {
       setLoading(false)
     }
@@ -118,19 +120,17 @@ export function HomePage() {
     setLoading(true)
     try {
       await window.electronAPI.trustCertificate()
-      toast.success('Root CA installed')
+      toast.success(t('home.certificate.installed'))
       await refreshData()
     } catch (e) {
-      toast.error('Failed to trust certificate')
+      toast.error(t('home.certificate.install_failed'))
     } finally {
       setLoading(false)
     }
   }
 
   const handleUntrustCert = async () => {
-    const confirmed = window.confirm(
-      '确定要从系统信任库中移除根证书吗？\n\n移除后，拦截 HTTPS 请求将会出现安全警告（红锁），直到你重新安装证书。'
-    )
+    const confirmed = window.confirm(t('home.certificate.uninstall_confirm'))
     if (!confirmed) return
 
     setLoading(true)
@@ -139,13 +139,13 @@ export function HomePage() {
       await window.electronAPI.untrustCertificate()
 
       // 3. 成功提示
-      toast.success('根证书已从系统信任库移除')
+      toast.success(t('home.certificate.uninstalled'))
 
       // 4. 刷新状态 (虽然目前 isCaGenerated 只检查文件是否存在，但刷新是个好习惯)
       await refreshData()
     } catch (e: any) {
       console.error(e)
-      toast.error('移除证书失败: ' + e.message)
+      toast.error(t('home.certificate.uninstall_failed') + ': ' + e.message)
     } finally {
       setLoading(false)
     }
@@ -159,8 +159,8 @@ export function HomePage() {
     <div className="space-y-6 max-w-5xl mx-auto h-full flex flex-col">
       {/* Header */}
       <div className="shrink-0">
-        <h2 className="text-2xl font-bold text-foreground">Dashboard</h2>
-        <p className="text-muted-foreground text-sm mt-1">System status and core controls.</p>
+        <h2 className="text-2xl font-bold text-foreground">{t('home.title')}</h2>
+        <p className="text-muted-foreground text-sm mt-1">{t('home.subtitle')}</p>
       </div>
 
       {/* --- Master Switch --- */}
@@ -182,15 +182,17 @@ export function HomePage() {
             </div>
             <div>
               <h3 className="text-lg font-semibold text-foreground">
-                {proxyRunning ? 'Proxy Engine Running' : 'Proxy Engine Stopped'}
+                {proxyRunning ? t('home.proxy.running') : t('home.proxy.stopped')}
               </h3>
               <p className="text-sm text-muted-foreground">
-                {proxyRunning ? 'Ready to intercept traffic.' : 'System is idle.'}
+                {proxyRunning ? t('home.proxy.ready') : t('home.proxy.idle')}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-muted-foreground">Master Switch</span>
+            <span className="text-sm font-medium text-muted-foreground">
+              {t('home.proxy.master_switch')}
+            </span>
             <Switch
               checked={proxyRunning}
               onCheckedChange={toggleProxy}
@@ -208,16 +210,18 @@ export function HomePage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Globe className="w-5 h-5 text-blue-500" />
-                <CardTitle className="text-base">Interception Rules</CardTitle>
+                <CardTitle className="text-base">{t('home.interception.title')}</CardTitle>
               </div>
               <Badge
                 variant={allHostsValid ? 'default' : 'destructive'}
                 className={allHostsValid ? 'bg-green-600' : ''}
               >
-                {allHostsValid ? 'All Active' : 'Attention Needed'}
+                {allHostsValid
+                  ? t('home.interception.status_all_active')
+                  : t('home.interception.status_need_attention')}
               </Badge>
             </div>
-            <CardDescription>Status of hosts file entries for enabled rules.</CardDescription>
+            <CardDescription>{t('home.interception.description')}</CardDescription>
           </CardHeader>
 
           <Separator />
@@ -226,7 +230,7 @@ export function HomePage() {
             <CardContent className="pt-0">
               {enabledRules.length === 0 ? (
                 <div className="py-8 text-center text-sm text-muted-foreground">
-                  No enabled rules found. Go to "Rules" tab to add one.
+                  {t('home.interception.no_rules')}
                 </div>
               ) : (
                 <div className="divide-y divide-border/50">
@@ -250,7 +254,7 @@ export function HomePage() {
                           </div>
                           <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                             <ExternalLink className="w-2.5 h-2.5" />
-                            Redirects to 127.0.0.1
+                            {t('home.interception.redirect_to')}
                           </span>
                         </div>
 
@@ -260,7 +264,7 @@ export function HomePage() {
                             variant="outline"
                             className="text-green-600 border-green-200 bg-green-50/50 dark:bg-green-900/20 dark:border-green-900"
                           >
-                            Active
+                            {t('home.interception.active')}
                           </Badge>
                         ) : (
                           <Button
@@ -269,7 +273,7 @@ export function HomePage() {
                             className="h-7 text-xs bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400"
                             onClick={() => handleFixHost(rule.sourceHost)}
                           >
-                            Fix Host
+                            {t('home.interception.fix_host')}
                           </Button>
                         )}
                       </div>
@@ -287,23 +291,23 @@ export function HomePage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-5 h-5 text-orange-500" />
-                <CardTitle className="text-base">System Trust</CardTitle>
+                <CardTitle className="text-base">{t('home.certificate.title')}</CardTitle>
               </div>
               <Badge variant={caGenerated ? 'outline' : 'secondary'}>
-                {caGenerated ? 'Generated' : 'Missing'}
+                {caGenerated ? t('home.certificate.generated') : t('home.certificate.missing')}
               </Badge>
             </div>
-            <CardDescription>Root CA installation status.</CardDescription>
+            <CardDescription>{t('home.certificate.description')}</CardDescription>
           </CardHeader>
           <Separator />
           <CardContent className="pt-4">
             <div className="flex flex-col gap-4">
               <div className="bg-muted/50 p-4 rounded-lg border border-border/50">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">Root Certificate</span>
+                  <span className="text-sm font-medium">{t('home.certificate.root_cert')}</span>
                   {/* 这里我们假设如果文件存在就是 Installed，实际上无法检测是否被信任，除非用 native 模块 */}
                   <span className="text-xs text-muted-foreground">
-                    {caGenerated ? 'Ready' : 'Not Found'}
+                    {caGenerated ? t('home.certificate.ready') : t('home.certificate.not_found')}
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -314,7 +318,7 @@ export function HomePage() {
                     onClick={handleTrustCert}
                     disabled={loading}
                   >
-                    Install / Repair
+                    {t('home.certificate.install')}
                   </Button>
                   <Button
                     variant="default"
@@ -325,16 +329,13 @@ export function HomePage() {
                     // className="h-8 text-xs flex-1 text-destructive hover:text-destructive hover:bg-destructive/10 px-3"
                   >
                     <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-                    Uninstall Cert
+                    {t('home.certificate.uninstall')}
                   </Button>
                 </div>
               </div>
 
               <div className="text-xs text-muted-foreground">
-                <p>
-                  <strong>Note:</strong> If browsers still show certificate errors, click "Install /
-                  Repair" again or restart your browser.
-                </p>
+                <p>{t('home.certificate.note')}</p>
               </div>
             </div>
           </CardContent>

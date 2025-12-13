@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Plus, ArrowRight, ArrowRightLeft, X, MoreVertical, Edit2, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -44,6 +45,7 @@ const DEFAULT_RULE_FORM: Omit<Rule, 'id'> = {
 }
 
 export function RulesPage() {
+  const { t } = useTranslation()
   const [rules, setRules] = useState<Rule[]>([])
   const [providers, setProviders] = useState<Provider[]>([])
   const [loading, setLoading] = useState(true)
@@ -77,7 +79,7 @@ export function RulesPage() {
       setProviders(fetchedProviders)
       setRules(fetchedRules)
     } catch (error) {
-      toast.error('Failed to load configuration')
+      toast.error(t('rules.messages.load_failed'))
     } finally {
       setLoading(false)
     }
@@ -117,28 +119,28 @@ export function RulesPage() {
 
   // 删除规则
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this rule?')) return
+    if (!confirm(t('rules.delete_confirm'))) return
 
     try {
       await window.electronAPI.deleteRule(id)
-      toast.success('Rule deleted')
+      toast.success(t('rules.messages.deleted'))
       loadData()
     } catch (e) {
-      toast.error('Failed to delete rule')
+      toast.error(t('rules.messages.delete_failed'))
     }
   }
 
   // 提交保存 (新增或更新)
   const handleSaveRule = async () => {
     if (!formData.sourceHost || !formData.targetProviderId) {
-      toast.error('Source Host and Target Provider are required')
+      toast.error(t('rules.messages.required_fields'))
       return
     }
 
     // 检查源主机是否已被使用
     if (isSourceHostUsed(formData.sourceHost)) {
       toast.error(
-        `Source host "${getSourceDisplayName(formData.sourceHost)}" is already configured`
+        t('rules.messages.source_exists', { host: getSourceDisplayName(formData.sourceHost) })
       )
       return
     }
@@ -152,17 +154,17 @@ export function RulesPage() {
           id: editingRuleId,
           ...formData
         })
-        toast.success('Rule updated successfully')
+        toast.success(t('rules.messages.updated'))
       } else {
         // 新增逻辑
         await window.electronAPI.addRule(formData)
-        toast.success('Rule added successfully')
+        toast.success(t('rules.messages.added'))
       }
 
       setIsDialogOpen(false)
       loadData()
     } catch (e) {
-      toast.error('Operation failed')
+      toast.error(t('rules.messages.operation_failed'))
     } finally {
       setIsSubmitting(false)
     }
@@ -180,9 +182,9 @@ export function RulesPage() {
         isEnabled: !currentStatus
       })
 
-      toast.success(currentStatus ? 'Rule disabled' : 'Rule enabled')
+      toast.success(currentStatus ? t('rules.messages.disabled') : t('rules.messages.enabled'))
     } catch (e) {
-      toast.error('Failed to update rule')
+      toast.error(t('rules.messages.update_failed'))
       loadData() // 失败回滚
     }
   }
@@ -191,7 +193,7 @@ export function RulesPage() {
   const handleAddMapping = () => {
     if (!mapFrom.trim() || !mapTo.trim()) return
     if (formData.modelMappings.some((m) => m.from === mapFrom)) {
-      toast.error(`Mapping for ${mapFrom} already exists`)
+      toast.error(t('rules.messages.mapping_exists', { model: mapFrom }))
       return
     }
     setFormData((prev) => ({
@@ -229,16 +231,14 @@ export function RulesPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Forwarding Rules</h2>
-          <p className="text-muted-foreground text-sm mt-1">
-            Intercept traffic and map models to providers.
-          </p>
+          <h2 className="text-2xl font-bold text-foreground">{t('rules.title')}</h2>
+          <p className="text-muted-foreground text-sm mt-1">{t('rules.subtitle')}</p>
         </div>
         <Button
           onClick={handleOpenAdd}
           className="bg-blue-600 hover:bg-blue-500 text-white rounded-full px-6 shadow-lg shadow-blue-900/20 w-full sm:w-auto"
         >
-          <Plus className="w-4 h-4 mr-2" /> New Rule
+          <Plus className="w-4 h-4 mr-2" /> {t('rules.new_rule')}
         </Button>
       </div>
 
@@ -276,7 +276,7 @@ export function RulesPage() {
                     htmlFor={`switch-${rule.id}`}
                     className="text-xs text-muted-foreground cursor-pointer select-none"
                   >
-                    {rule.isEnabled ? 'Enabled' : 'Disabled'}
+                    {rule.isEnabled ? t('rules.enabled') : t('rules.disabled')}
                   </Label>
                   <Switch
                     id={`switch-${rule.id}`}
@@ -304,13 +304,13 @@ export function RulesPage() {
                       onClick={() => handleOpenEdit(rule)}
                       className="cursor-pointer"
                     >
-                      <Edit2 className="w-4 h-4 mr-2 text-blue-500" /> Edit Rule
+                      <Edit2 className="w-4 h-4 mr-2 text-blue-500" /> {t('rules.edit')}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => handleDelete(rule.id)}
                       className="cursor-pointer text-destructive focus:text-destructive"
                     >
-                      <Trash2 className="w-4 h-4 mr-2" /> Delete Rule
+                      <Trash2 className="w-4 h-4 mr-2" /> {t('rules.delete')}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -321,7 +321,7 @@ export function RulesPage() {
             {rule.modelMappings.length > 0 && (
               <div className="bg-muted/30 rounded-xl p-3 sm:p-4 border border-border/50">
                 <div className="text-xs text-muted-foreground uppercase font-semibold mb-3 flex items-center gap-2">
-                  <ArrowRightLeft className="w-3 h-3" /> Model Transformations
+                  <ArrowRightLeft className="w-3 h-3" /> {t('rules.model_transformations')}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {rule.modelMappings.map((map, idx) => (
@@ -341,7 +341,7 @@ export function RulesPage() {
 
             {rule.modelMappings.length === 0 && (
               <div className="text-xs text-muted-foreground italic px-2">
-                No model transformations configured.
+                {t('rules.no_transformations')}
               </div>
             )}
           </div>
@@ -349,7 +349,7 @@ export function RulesPage() {
 
         {!loading && rules.length === 0 && (
           <div className="text-center py-12 border border-dashed border-border rounded-xl bg-muted/20 text-muted-foreground">
-            No forwarding rules created yet.
+            {t('rules.no_rules')}
           </div>
         )}
       </div>
@@ -358,11 +358,13 @@ export function RulesPage() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[600px] bg-background">
           <DialogHeader>
-            <DialogTitle>{editingRuleId ? 'Edit Routing Rule' : 'New Routing Rule'}</DialogTitle>
+            <DialogTitle>
+              {editingRuleId ? t('rules.dialog.title_edit') : t('rules.dialog.title_new')}
+            </DialogTitle>
             <DialogDescription>
               {editingRuleId
-                ? 'Modify existing rule settings.'
-                : 'Define traffic interception logic.'}
+                ? t('rules.dialog.description_edit')
+                : t('rules.dialog.description_new')}
             </DialogDescription>
           </DialogHeader>
 
@@ -370,7 +372,8 @@ export function RulesPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>
-                  Source Host <span className="text-destructive">*</span>
+                  {t('rules.dialog.source_host')}{' '}
+                  <span className="text-destructive">{t('rules.dialog.source_host_required')}</span>
                 </Label>
                 <Select
                   value={showCustomInput ? 'custom' : formData.sourceHost}
@@ -385,7 +388,7 @@ export function RulesPage() {
                   }}
                 >
                   <SelectTrigger className="bg-background">
-                    <SelectValue placeholder="Select or type..." />
+                    <SelectValue placeholder={t('rules.dialog.select_placeholder')} />
                   </SelectTrigger>
                   <SelectContent>
                     {PRESET_SOURCES.map((src) => {
@@ -401,20 +404,20 @@ export function RulesPage() {
                             <span>{src.label}</span>
                             {isUsed && (
                               <span className="text-xs text-muted-foreground ml-2">
-                                (Already configured)
+                                ({t('rules.dialog.already_configured')})
                               </span>
                             )}
                           </div>
                         </SelectItem>
                       )
                     })}
-                    <SelectItem value="custom">Custom...</SelectItem>
+                    <SelectItem value="custom">{t('rules.dialog.custom')}</SelectItem>
                   </SelectContent>
                 </Select>
                 {/* 自定义输入框 - 只在选择 custom 时显示 */}
                 {showCustomInput && (
                   <Input
-                    placeholder="Enter hostname (e.g. api.x.com)"
+                    placeholder={t('rules.dialog.custom_placeholder')}
                     className="mt-2 bg-background"
                     value={formData.sourceHost}
                     onChange={(e) => setFormData({ ...formData, sourceHost: e.target.value })}
@@ -424,14 +427,17 @@ export function RulesPage() {
 
               <div className="space-y-2">
                 <Label>
-                  Target Provider <span className="text-destructive">*</span>
+                  {t('rules.dialog.target_provider')}{' '}
+                  <span className="text-destructive">
+                    {t('rules.dialog.target_provider_required')}
+                  </span>
                 </Label>
                 <Select
                   value={formData.targetProviderId}
                   onValueChange={(val) => setFormData({ ...formData, targetProviderId: val })}
                 >
                   <SelectTrigger className="bg-background">
-                    <SelectValue placeholder="Select provider..." />
+                    <SelectValue placeholder={t('rules.dialog.select_provider')} />
                   </SelectTrigger>
                   <SelectContent>
                     {providers.map((p) => (
@@ -445,11 +451,13 @@ export function RulesPage() {
             </div>
 
             <div className="space-y-3">
-              <Label>Model ID Mapping</Label>
+              <Label>{t('rules.dialog.model_mapping')}</Label>
               <div className="bg-muted/30 border border-border rounded-lg p-4 space-y-4">
                 <div className="flex gap-2 items-end">
                   <div className="flex-1 space-y-1">
-                    <Label className="text-xs text-muted-foreground">Incoming</Label>
+                    <Label className="text-xs text-muted-foreground">
+                      {t('rules.dialog.incoming')}
+                    </Label>
                     <Input
                       placeholder="gpt-4"
                       className="bg-background h-8 text-sm"
@@ -459,7 +467,9 @@ export function RulesPage() {
                   </div>
                   <ArrowRight className="w-4 h-4 text-muted-foreground mb-2" />
                   <div className="flex-1 space-y-1">
-                    <Label className="text-xs text-muted-foreground">Target</Label>
+                    <Label className="text-xs text-muted-foreground">
+                      {t('rules.dialog.target')}
+                    </Label>
                     <Input
                       placeholder="llama3"
                       className="bg-background h-8 text-sm"
@@ -473,7 +483,7 @@ export function RulesPage() {
                     onClick={handleAddMapping}
                     className="mb-[1px]"
                   >
-                    Add
+                    {t('rules.dialog.add')}
                   </Button>
                 </div>
 
@@ -505,14 +515,14 @@ export function RulesPage() {
 
           <DialogFooter>
             <Button variant="ghost" onClick={() => setIsDialogOpen(false)}>
-              Cancel
+              {t('rules.dialog.cancel')}
             </Button>
             <Button
               onClick={handleSaveRule}
               disabled={isSubmitting}
               className="bg-blue-600 hover:bg-blue-500 text-white"
             >
-              {isSubmitting ? 'Saving...' : 'Save Rule'}
+              {isSubmitting ? t('rules.dialog.saving') : t('rules.dialog.save')}
             </Button>
           </DialogFooter>
         </DialogContent>

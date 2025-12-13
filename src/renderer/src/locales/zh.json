@@ -10,6 +10,158 @@
     "logs": "运行日志",
     "settings": "系统设置"
   },
+  "home": {
+    "title": "仪表盘",
+    "subtitle": "系统状态与核心控制。",
+    "proxy": {
+      "running": "代理引擎运行中",
+      "stopped": "代理引擎已停止",
+      "ready": "准备拦截流量。",
+      "idle": "系统空闲。",
+      "master_switch": "主开关",
+      "started": "代理引擎已启动",
+      "start_failed": "操作失败"
+    },
+    "interception": {
+      "title": "拦截规则",
+      "status_all_active": "全部激活",
+      "status_need_attention": "需要注意",
+      "description": "已启用规则的 Hosts 文件条目状态。",
+      "no_rules": "未找到已启用的规则。前往\"转发规则\"页面添加。",
+      "redirect_to": "重定向至 127.0.0.1",
+      "active": "激活",
+      "fix_host": "修复 Hosts",
+      "hosts_updated": "Hosts 已更新",
+      "hosts_update_failed": "更新 Hosts 失败"
+    },
+    "certificate": {
+      "title": "系统信任",
+      "generated": "已生成",
+      "missing": "缺失",
+      "description": "根证书安装状态。",
+      "root_cert": "根证书",
+      "ready": "就绪",
+      "not_found": "未找到",
+      "install": "安装 / 修复",
+      "uninstall": "卸载证书",
+      "note": "提示：如果浏览器仍显示证书错误，请再次点击\"安装 / 修复\"或重启浏览器。",
+      "installed": "根证书已安装",
+      "install_failed": "信任证书失败",
+      "uninstall_confirm": "确定要从系统信任库中移除根证书吗？\n\n移除后，拦截 HTTPS 请求将会出现安全警告（红锁），直到你重新安装证书。",
+      "uninstalled": "根证书已从系统信任库移除",
+      "uninstall_failed": "移除证书失败"
+    }
+  },
+  "rules": {
+    "title": "转发规则",
+    "subtitle": "拦截流量并将模型映射到提供商。",
+    "new_rule": "新建规则",
+    "source_names": {
+      "openai": "OpenAI",
+      "anthropic": "Anthropic",
+      "gemini": "Gemini"
+    },
+    "enabled": "已启用",
+    "disabled": "已禁用",
+    "edit": "编辑规则",
+    "delete": "删除规则",
+    "delete_confirm": "确定要删除此规则吗？",
+    "model_transformations": "模型转换",
+    "no_transformations": "未配置模型转换。",
+    "no_rules": "尚未创建转发规则。",
+    "dialog": {
+      "title_new": "新建路由规则",
+      "title_edit": "编辑路由规则",
+      "description_new": "定义流量拦截逻辑。",
+      "description_edit": "修改现有规则设置。",
+      "source_host": "源主机",
+      "source_host_required": "*",
+      "select_placeholder": "选择或输入...",
+      "custom": "自定义...",
+      "custom_placeholder": "输入主机名（例如 api.x.com）",
+      "target_provider": "目标提供商",
+      "target_provider_required": "*",
+      "select_provider": "选择提供商...",
+      "model_mapping": "模型 ID 映射",
+      "incoming": "传入",
+      "target": "目标",
+      "add": "添加",
+      "cancel": "取消",
+      "saving": "保存中...",
+      "save": "保存规则",
+      "already_configured": "已配置"
+    },
+    "messages": {
+      "deleted": "规则已删除",
+      "updated": "规则更新成功",
+      "added": "规则添加成功",
+      "enabled": "规则已启用",
+      "disabled": "规则已禁用",
+      "update_failed": "更新规则失败",
+      "required_fields": "源主机和目标提供商为必填项",
+      "operation_failed": "操作失败",
+      "mapping_exists": "{{model}} 的映射已存在",
+      "source_exists": "源主机 \"{{host}}\" 已配置"
+    }
+  },
+  "providers": {
+    "title": "服务提供商",
+    "subtitle": "管理上游 API 服务和凭证。",
+    "add_btn": "新增渠道",
+    "secured": "已加密",
+    "no_auth": "无认证",
+    "base_url": "接口地址",
+    "api_credentials": "API 凭证",
+    "none": "无",
+    "edit": "编辑",
+    "delete": "删除",
+    "delete_confirm": "确定要删除此提供商吗？此操作无法撤销。",
+    "no_providers": "尚未配置提供商。",
+    "create_first": "创建你的第一个提供商",
+    "dialog": {
+      "title_new": "添加新提供商",
+      "title_edit": "编辑提供商",
+      "description": "配置上游 AI 服务的连接详情。",
+      "provider_name": "提供商名称",
+      "provider_name_required": "*",
+      "name_placeholder": "例如：我的本地服务",
+      "type": "类型",
+      "type_custom": "自定义",
+      "type_openai": "OpenAI",
+      "base_url_required": "*",
+      "base_url_placeholder": "https://api.openai.com/v1",
+      "base_url_note": "必须包含协议（http/https）。不要包含尾部斜杠。",
+      "api_key": "API 密钥（可选）",
+      "api_key_placeholder": "sk-...",
+      "cancel": "取消",
+      "saving": "保存中...",
+      "save": "保存"
+    },
+    "messages": {
+      "deleted": "提供商已删除",
+      "delete_failed": "删除失败",
+      "required_fields": "名称和接口地址为必填项",
+      "updated": "提供商更新成功",
+      "added": "提供商添加成功",
+      "load_failed": "加载提供商失败",
+      "operation_failed": "操作失败"
+    }
+  },
+  "logs": {
+    "title": "系统日志",
+    "subtitle": "实时执行日志，用于调试。",
+    "local": "本地",
+    "copy": "复制",
+    "clear": "清空",
+    "file_name": "main.log",
+    "auto_scroll": "自动滚动",
+    "no_logs": "暂无日志",
+    "clear_confirm": "清空所有日志？",
+    "messages": {
+      "cleared": "日志已清空",
+      "copied": "日志已复制"
+    }
+  },
   "settings": {
     "title": "应用设置",
     "subtitle": "管理应用的全局行为与外观。",
@@ -27,12 +179,19 @@
     "tray_toggle": "切换显示/隐藏",
     "footer": "由你 ❤️ 制作"
   },
-  "providers": {
-    "title": "服务提供商",
-    "add_btn": "新增渠道",
-    "table_name": "名称",
-    "table_url": "接口地址",
-    "secured": "已加密",
-    "no_auth": "无认证"
+  "common": {
+    "confirm": "确认",
+    "cancel": "取消",
+    "save": "保存",
+    "delete": "删除",
+    "edit": "编辑",
+    "add": "添加",
+    "close": "关闭",
+    "yes": "是",
+    "no": "否",
+    "loading": "加载中...",
+    "success": "成功",
+    "error": "错误",
+    "warning": "警告"
   }
 }

@@ -11,8 +11,9 @@ i18n
   // 注入 React
   .use(initReactI18next)
   .init({
-    debug: true, // 开发模式下开启，生产模式请关闭
-    fallbackLng: 'en', // 默认语言
+    debug: false, // 生产环境关闭调试
+    fallbackLng: 'zh', // 默认语言改为中文
+    lng: 'zh', // 强制初始语言为中文
     interpolation: {
       escapeValue: false // React 默认已经防 XSS，不需要 i18n 再转义
     },
