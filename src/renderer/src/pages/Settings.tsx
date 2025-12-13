@@ -74,7 +74,7 @@ export function SettingsPage() {
           />
         </SettingItem>
 
-        {/* --- 3. 开关类型 (Switch) --- */}
+        {/* --- 3. 开关类型 (Switch) ---
         <SettingItem label="开机自启" icon={<Power className="w-4 h-4" />} className="px-6">
           <Switch checked={autoStart} onCheckedChange={setAutoStart} />
         </SettingItem>
@@ -94,7 +94,7 @@ export function SettingsPage() {
           className="px-6 pl-[3.25rem]" // 如果没有图标，为了对齐可以使用 padding 或留空
         >
           <Switch checked={silentStart} onCheckedChange={setSilentStart} />
-        </SettingItem>
+        </SettingItem> */}
       </div>
 
       <p className="text-center text-xs text-muted-foreground mt-8">

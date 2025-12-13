@@ -1,6 +1,7 @@
-import { Layers, Network, Settings, Activity, LayoutDashboard } from 'lucide-react'
+import { Layers, Settings, Activity, LayoutDashboard, Share2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useTranslation } from 'react-i18next'
+import iconPng from '@/assets/icon.png'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -12,7 +13,7 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
   const { t } = useTranslation()
   const navItems = [
     { id: 'home', label: t('nav.home'), icon: LayoutDashboard },
-    { id: 'rules', label: t('nav.rules'), icon: Network },
+    { id: 'rules', label: t('nav.rules'), icon: Share2 },
     { id: 'providers', label: t('nav.providers'), icon: Layers },
     { id: 'logs', label: t('nav.logs'), icon: Activity },
     { id: 'settings', label: t('nav.settings'), icon: Settings }
@@ -24,9 +25,9 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
       <aside className="w-64 shrink-0 bg-muted/40 border-r border-border flex flex-col">
         {/* App Logo/Title */}
         <div className="h-16 flex items-center px-6 border-b border-border">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3 shadow-lg shadow-blue-900/20">
-            {/* Logo 保持白色，因为背景始终是蓝色 */}
-            <Network className="w-5 h-5 text-white" />
+          <div className="flex items-center justify-center mr-3 shadow-lg shadow-blue-900/20">
+            {/* 使用自定义图标 */}
+            <img src={iconPng} alt="Ghosxy Logo" className="w-7 h-7" />
           </div>
           <span className="font-bold text-lg tracking-wide">{t('app.name')}</span>
         </div>

@@ -30,7 +30,11 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Provider, Rule } from 'src/shared/types'
 
-const PRESET_SOURCES = ['api.openai.com', 'api.anthropic.com', 'generativelanguage.googleapis.com']
+const PRESET_SOURCES = [
+  { value: 'api.openai.com', label: 'OpenAI' },
+  { value: 'api.anthropic.com', label: 'Anthropic' },
+  { value: 'generativelanguage.googleapis.com', label: 'Gemini' }
+]
 
 const DEFAULT_RULE_FORM: Omit<Rule, 'id'> = {
   isEnabled: true,
@@ -51,10 +55,16 @@ export function RulesPage() {
 
   // Form State
   const [formData, setFormData] = useState<Omit<Rule, 'id'>>(DEFAULT_RULE_FORM)
+  const [showCustomInput, setShowCustomInput] = useState(false)
 
   // Model Mapping Inputs
   const [mapFrom, setMapFrom] = useState('')
   const [mapTo, setMapTo] = useState('')
+
+  // 检查是否为自定义源
+  const isCustomSource = (host: string) => {
+    return !!host && !PRESET_SOURCES.some((s) => s.value === host)
+  }
 
   // 1. Load Data
   const loadData = async () => {
@@ -83,6 +93,7 @@ export function RulesPage() {
   const handleOpenAdd = () => {
     setEditingRuleId(null)
     setFormData(DEFAULT_RULE_FORM)
+    setShowCustomInput(false)
     setMapFrom('')
     setMapTo('')
     setIsDialogOpen(true)
@@ -98,6 +109,7 @@ export function RulesPage() {
       targetProviderId: rule.targetProviderId,
       modelMappings: [...rule.modelMappings]
     })
+    setShowCustomInput(isCustomSource(rule.sourceHost))
     setMapFrom('')
     setMapTo('')
     setIsDialogOpen(true)
@@ -120,6 +132,14 @@ export function RulesPage() {
   const handleSaveRule = async () => {
     if (!formData.sourceHost || !formData.targetProviderId) {
       toast.error('Source Host and Target Provider are required')
+      return
+    }
+
+    // 检查源主机是否已被使用
+    if (isSourceHostUsed(formData.sourceHost)) {
+      toast.error(
+        `Source host "${getSourceDisplayName(formData.sourceHost)}" is already configured`
+      )
       return
     }
 
@@ -194,9 +214,20 @@ export function RulesPage() {
     return p ? p.name : 'Unknown Provider'
   }
 
+  // 获取简化的源主机显示名称
+  const getSourceDisplayName = (sourceHost: string) => {
+    const preset = PRESET_SOURCES.find((s) => s.value === sourceHost)
+    return preset ? preset.label : sourceHost // 自定义域名直接显示完整URL
+  }
+
+  // 检查源主机是否已被使用(排除当前编辑的规则)
+  const isSourceHostUsed = (sourceHost: string) => {
+    return rules.some((rule) => rule.sourceHost === sourceHost && rule.id !== editingRuleId)
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-foreground">Forwarding Rules</h2>
           <p className="text-muted-foreground text-sm mt-1">
@@ -205,7 +236,7 @@ export function RulesPage() {
         </div>
         <Button
           onClick={handleOpenAdd}
-          className="bg-blue-600 hover:bg-blue-500 text-white rounded-full px-6 shadow-lg shadow-blue-900/20"
+          className="bg-blue-600 hover:bg-blue-500 text-white rounded-full px-6 shadow-lg shadow-blue-900/20 w-full sm:w-auto"
         >
           <Plus className="w-4 h-4 mr-2" /> New Rule
         </Button>
@@ -216,30 +247,30 @@ export function RulesPage() {
           <div
             key={rule.id}
             className={cn(
-              'group relative border rounded-2xl p-6 transition-all duration-300',
+              'group relative border rounded-2xl p-4 sm:p-6 transition-all duration-300',
               rule.isEnabled
                 ? 'bg-card border-border hover:border-primary/30 shadow-sm'
                 : 'bg-muted/30 border-border/50 opacity-75 grayscale-[0.5]'
             )}
           >
             {/* Top Row */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-4">
-                <div className="bg-muted px-4 py-2 rounded-lg border border-border text-foreground font-mono text-sm">
-                  https://{rule.sourceHost}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 min-w-0 flex-1 overflow-hidden">
+                <div className="bg-muted px-3 py-2 rounded-lg border border-border text-foreground font-mono text-xs sm:text-sm truncate">
+                  {getSourceDisplayName(rule.sourceHost)}
                 </div>
-                <div className="flex flex-col items-center gap-1 opacity-50">
+                <div className="hidden sm:flex flex-col items-center gap-1 opacity-50 shrink-0">
                   <div className="h-[1px] w-8 bg-border"></div>
                   <ArrowRight className="w-4 h-4 text-muted-foreground" />
                   <div className="h-[1px] w-8 bg-border"></div>
                 </div>
-                <div className="bg-blue-500/10 px-4 py-2 rounded-lg border border-blue-500/20 text-blue-600 dark:text-blue-400 font-medium text-sm flex items-center gap-2">
+                <div className="bg-blue-500/10 px-3 py-2 rounded-lg border border-blue-500/20 text-blue-600 dark:text-blue-400 font-medium text-xs sm:text-sm flex items-center gap-2 truncate">
                   {getProviderName(rule.targetProviderId)}
                 </div>
               </div>
 
               {/* Controls: Switch + Menu */}
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 sm:gap-4 shrink-0">
                 <div className="flex items-center gap-2">
                   <Label
                     htmlFor={`switch-${rule.id}`}
@@ -288,7 +319,7 @@ export function RulesPage() {
 
             {/* Model Mappings Display */}
             {rule.modelMappings.length > 0 && (
-              <div className="bg-muted/30 rounded-xl p-4 border border-border/50">
+              <div className="bg-muted/30 rounded-xl p-3 sm:p-4 border border-border/50">
                 <div className="text-xs text-muted-foreground uppercase font-semibold mb-3 flex items-center gap-2">
                   <ArrowRightLeft className="w-3 h-3" /> Model Transformations
                 </div>
@@ -297,10 +328,10 @@ export function RulesPage() {
                     <Badge
                       key={idx}
                       variant="secondary"
-                      className="bg-background border border-border text-foreground hover:bg-accent font-normal py-1 px-3"
+                      className="bg-background border border-border text-foreground hover:bg-accent font-normal py-1 px-2 sm:px-3 text-xs"
                     >
-                      <span className="text-muted-foreground mr-1.5">{map.from}</span>
-                      <ArrowRight className="w-3 h-3 text-blue-500 mx-1 inline" />
+                      <span className="text-muted-foreground mr-1 sm:mr-1.5">{map.from}</span>
+                      <ArrowRight className="w-3 h-3 text-blue-500 mx-0.5 sm:mx-1 inline" />
                       <span className="text-foreground">{map.to}</span>
                     </Badge>
                   ))}
@@ -342,26 +373,50 @@ export function RulesPage() {
                   Source Host <span className="text-destructive">*</span>
                 </Label>
                 <Select
-                  value={formData.sourceHost}
-                  onValueChange={(val) => setFormData({ ...formData, sourceHost: val })}
+                  value={showCustomInput ? 'custom' : formData.sourceHost}
+                  onValueChange={(val) => {
+                    if (val === 'custom') {
+                      setShowCustomInput(true)
+                      setFormData({ ...formData, sourceHost: '' })
+                    } else {
+                      setShowCustomInput(false)
+                      setFormData({ ...formData, sourceHost: val })
+                    }
+                  }}
                 >
                   <SelectTrigger className="bg-background">
                     <SelectValue placeholder="Select or type..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {PRESET_SOURCES.map((src) => (
-                      <SelectItem key={src} value={src}>
-                        {src}
-                      </SelectItem>
-                    ))}
+                    {PRESET_SOURCES.map((src) => {
+                      const isUsed = isSourceHostUsed(src.value)
+                      return (
+                        <SelectItem
+                          key={src.value}
+                          value={src.value}
+                          disabled={isUsed}
+                          className={cn(isUsed && 'opacity-50 cursor-not-allowed')}
+                        >
+                          <div className="flex items-center justify-between w-full">
+                            <span>{src.label}</span>
+                            {isUsed && (
+                              <span className="text-xs text-muted-foreground ml-2">
+                                (Already configured)
+                              </span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      )
+                    })}
                     <SelectItem value="custom">Custom...</SelectItem>
                   </SelectContent>
                 </Select>
-                {/* 增加自定义输入的 Input */}
-                {formData.sourceHost === 'custom' && (
+                {/* 自定义输入框 - 只在选择 custom 时显示 */}
+                {showCustomInput && (
                   <Input
                     placeholder="Enter hostname (e.g. api.x.com)"
                     className="mt-2 bg-background"
+                    value={formData.sourceHost}
                     onChange={(e) => setFormData({ ...formData, sourceHost: e.target.value })}
                   />
                 )}
