@@ -10,6 +10,13 @@ import {
   DialogFooter,
   DialogDescription
 } from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -20,7 +27,15 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { toast } from 'sonner'
 import { Provider } from 'src/shared/types'
-import { cn } from '@/lib/utils' // 确保引入 cn
+import { cn } from '@/lib/utils'
+
+// Provider 类型选项
+const PROVIDER_TYPES = [
+  { value: 'openai', label: 'OpenAI' },
+  { value: 'anthropic', label: 'Anthropic' },
+  { value: 'gemini', label: 'Gemini' },
+  { value: 'custom', label: 'Custom' }
+] as const
 
 const DEFAULT_FORM: Omit<Provider, 'id'> = {
   name: '',
@@ -157,18 +172,36 @@ export function ProvidersPage() {
                     'w-10 h-10 rounded-xl flex items-center justify-center shadow-sm',
                     provider.type === 'openai'
                       ? 'bg-green-500/10 text-green-600 dark:text-green-400'
-                      : 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                      : provider.type === 'anthropic'
+                        ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400'
+                        : provider.type === 'gemini'
+                          ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400'
+                          : 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
                   )}
                 >
-                  {provider.type === 'openai' ? (
-                    <Globe className="w-5 h-5" />
-                  ) : (
+                  {provider.type === 'custom' ? (
                     <Server className="w-5 h-5" />
+                  ) : (
+                    <Globe className="w-5 h-5" />
                   )}
                 </div>
                 <div>
                   <h3 className="font-semibold text-card-foreground">{provider.name}</h3>
-                  <div className="flex items-center text-xs mt-0.5">
+                  <div className="flex items-center gap-1.5 text-xs mt-0.5">
+                    <span
+                      className={cn(
+                        'px-1.5 py-0.5 rounded text-[10px] uppercase font-medium tracking-wider border',
+                        provider.type === 'openai'
+                          ? 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20'
+                          : provider.type === 'anthropic'
+                            ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20'
+                            : provider.type === 'gemini'
+                              ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20'
+                              : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'
+                      )}
+                    >
+                      {provider.type}
+                    </span>
                     <span
                       className={cn(
                         'px-1.5 py-0.5 rounded text-[10px] uppercase font-medium tracking-wider border',
@@ -281,6 +314,26 @@ export function ProvidersPage() {
                 placeholder={t('providers.dialog.name_placeholder')}
                 className="bg-background"
               />
+            </div>
+
+            {/* Provider Type */}
+            <div className="space-y-2">
+              <Label>{t('providers.dialog.provider_type', { defaultValue: 'Provider Type' })}</Label>
+              <Select
+                value={formData.type}
+                onValueChange={(val: Provider['type']) => setFormData({ ...formData, type: val })}
+              >
+                <SelectTrigger className="bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PROVIDER_TYPES.map((pt) => (
+                    <SelectItem key={pt.value} value={pt.value}>
+                      {pt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Base URL */}

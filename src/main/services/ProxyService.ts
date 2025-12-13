@@ -1,10 +1,18 @@
 import * as https from 'https'
 import * as http from 'http'
 import * as tls from 'tls'
-import * as httpProxy from 'http-proxy'
+import httpProxy from 'http-proxy'
+import { Readable } from 'stream'
 import log from 'electron-log'
 import { certService } from './CertService'
 import { storeService } from './StoreService'
+import { ModelMapping, Provider } from '../../shared/types'
+
+// 已知 API 提供商的认证方式映射 (基于 sourceHost)
+// 可扩展：添加新的 API 提供商只需在此映射中添加条目
+const AUTH_HEADER_MAP: Record<string, (apiKey: string) => Record<string, string>> = {
+  'api.anthropic.com': (apiKey) => ({ 'x-api-key': apiKey })
+}
 
 export class ProxyService {
   private proxy: httpProxy
@@ -18,19 +26,130 @@ export class ProxyService {
     })
 
     // 错误处理
-    this.proxy.on('error', (err, req, res) => {
+    this.proxy.on('error', (err, _req, res) => {
       log.error('[Proxy] Error:', err)
       if (res instanceof http.ServerResponse && !res.headersSent) {
         res.writeHead(502, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ error: 'Proxy Gateway Error', details: err.message }))
       }
     })
+  }
 
-    // (可选) 在这里处理请求修饰，比如修改 Header
-    this.proxy.on('proxyReq', (proxyReq, req, res, options) => {
-      // 如果将来要做 Model Mapping (修改 Body)，逻辑会很复杂，通常在这里处理
-      // 目前我们先专注做好路由转发
+  /**
+   * 收集完整的请求体
+   */
+  private collectRequestBody(req: http.IncomingMessage): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      const chunks: Buffer[] = []
+      req.on('data', (chunk: Buffer) => chunks.push(chunk))
+      req.on('end', () => resolve(Buffer.concat(chunks)))
+      req.on('error', reject)
     })
+  }
+
+  /**
+   * 应用模型映射
+   * @param body 原始请求体 JSON 对象
+   * @param mappings 模型映射配置
+   * @returns 修改后的 JSON 对象和是否被修改的标志
+   */
+  private applyModelMapping(
+    body: Record<string, unknown>,
+    mappings: ModelMapping[]
+  ): {
+    modified: boolean
+    body: Record<string, unknown>
+    originalModel?: string
+    newModel?: string
+  } {
+    if (!body.model || typeof body.model !== 'string' || mappings.length === 0) {
+      return { modified: false, body }
+    }
+
+    const originalModel = body.model
+    const mapping = mappings.find((m) => m.from === originalModel)
+
+    if (mapping) {
+      return {
+        modified: true,
+        body: { ...body, model: mapping.to },
+        originalModel,
+        newModel: mapping.to
+      }
+    }
+
+    return { modified: false, body }
+  }
+
+  /**
+   * 判断是否为需要解析 Body 的请求
+   */
+  private shouldParseBody(req: http.IncomingMessage): boolean {
+    const contentType = req.headers['content-type'] || ''
+    const method = req.method?.toUpperCase()
+    return method === 'POST' && contentType.includes('application/json')
+  }
+
+  /**
+   * 应用 URL 路径中的模型映射 (Gemini 风格)
+   * URL 格式: /v1beta/models/{model}:action 或 /v1beta/models/{model}
+   * @param url 原始 URL
+   * @param mappings 模型映射配置
+   * @returns 修改后的 URL 和映射信息
+   */
+  private applyUrlModelMapping(
+    url: string,
+    mappings: ModelMapping[]
+  ): { modified: boolean; url: string; originalModel?: string; newModel?: string } {
+    if (mappings.length === 0) {
+      return { modified: false, url }
+    }
+
+    // 匹配 Gemini 风格的 URL: /v1beta/models/{model}:action 或 /v1beta/models/{model}
+    // 也支持 /v1/models/{model} 格式
+    const modelUrlPattern = /^(\/v1(?:beta)?\/models\/)([^/:]+)([:\/].*)?$/
+    const match = url.match(modelUrlPattern)
+
+    if (!match) {
+      return { modified: false, url }
+    }
+
+    const [, prefix, model, suffix = ''] = match
+    const mapping = mappings.find((m) => m.from === model)
+
+    if (mapping) {
+      const newUrl = `${prefix}${mapping.to}${suffix}`
+      return {
+        modified: true,
+        url: newUrl,
+        originalModel: model,
+        newModel: mapping.to
+      }
+    }
+
+    return { modified: false, url }
+  }
+
+  /**
+   * 根据 sourceHost 和 Provider 配置生成认证头
+   * 认证方式基于请求的源域名 (sourceHost) 判断，而非 Provider 配置
+   * @param sourceHost 拦截的源域名 (如 api.anthropic.com)
+   * @param provider Provider 配置 (提供 apiKey)
+   * @returns 认证头对象
+   */
+  private buildAuthHeaders(sourceHost: string, provider: Provider): Record<string, string> {
+    if (!provider.apiKey) {
+      return {}
+    }
+
+    // 检查是否有该 sourceHost 的特殊认证方式
+    const authBuilder = AUTH_HEADER_MAP[sourceHost]
+    if (authBuilder) {
+      return authBuilder(provider.apiKey)
+    }
+
+    // 默认使用 Bearer Token 方式
+    return { Authorization: `Bearer ${provider.apiKey}` }
   }
 
   /**
@@ -54,7 +173,7 @@ export class ProxyService {
                 cb(null, ctx)
               } catch (e) {
                 log.error(`[SNI] Error generating cert for ${servername}`, e)
-                cb(e as Error, null)
+                cb(e as Error, undefined)
               }
             },
             // B. 默认证书 (Fallback)，防止非 SNI 客户端连接报错
@@ -81,9 +200,9 @@ export class ProxyService {
   }
 
   /**
-   * 核心路由逻辑
+   * 核心路由逻辑 (支持模型映射)
    */
-  private handleRequest(req: http.IncomingMessage, res: http.ServerResponse) {
+  private async handleRequest(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
     const host = req.headers.host?.split(':')[0] // 拿到域名 (去除端口)
     let url = req.url
 
@@ -94,7 +213,7 @@ export class ProxyService {
     }
 
     // 1. 获取所有已启用的规则
-    const rules = storeService.getRules() // 假设 storeService 已经有了 getRules
+    const rules = storeService.getRules()
 
     // 2. 匹配规则 (Source Host)
     const matchedRule = rules.find((r) => r.isEnabled && r.sourceHost === host)
@@ -107,7 +226,7 @@ export class ProxyService {
     }
 
     // 3. 找到目标 Provider
-    const provider = storeService.getProviderById(matchedRule.targetProviderId) // 需要在 storeService 实现
+    const provider = storeService.getProviderById(matchedRule.targetProviderId)
 
     if (!provider) {
       log.error(`[Proxy] Provider not found for rule ID: ${matchedRule.id}`)
@@ -117,35 +236,113 @@ export class ProxyService {
     }
 
     // 4. 路径重写 - Gemini OpenAI 兼容模式
-    // 将 /v1beta/openai/* 重写为 /v1/*
     if (url && url.includes('/v1beta/openai/')) {
       const rewrittenUrl = url.replace('/v1beta/openai/', '/v1/')
       log.info(`[Path Rewrite] ${url} --> ${rewrittenUrl}`)
       url = rewrittenUrl
-      req.url = rewrittenUrl // 修改请求对象的 URL
+      req.url = rewrittenUrl
     }
 
-    // 5. 执行转发
-    log.info(
-      `[Route] ${req.method} https://${host}${url}  -->  ${provider.name} (${provider.baseUrl})`
-    )
+    // 5. URL 模型映射 (Gemini 风格: /v1beta/models/{model}:action)
+    const hasModelMappings = matchedRule.modelMappings && matchedRule.modelMappings.length > 0
+    let urlMappingApplied = false
+    let urlOriginalModel: string | undefined
+    let urlNewModel: string | undefined
 
-    // 构建 options
-    const proxyOptions: httpProxy.ServerOptions = {
-      target: provider.baseUrl,
-      headers: {
-        // 如果 Provider 有 API Key，我们要决定是现在注入，还是保留客户端的
-        // 这里做一个简单的逻辑：如果 Provider 配置了 Key，就覆盖；否则用客户端传来的
-        ...(provider.apiKey ? { Authorization: `Bearer ${provider.apiKey}` } : {})
+    if (hasModelMappings && url) {
+      const urlMappingResult = this.applyUrlModelMapping(url, matchedRule.modelMappings)
+      if (urlMappingResult.modified) {
+        url = urlMappingResult.url
+        req.url = urlMappingResult.url
+        urlMappingApplied = true
+        urlOriginalModel = urlMappingResult.originalModel
+        urlNewModel = urlMappingResult.newModel
+        log.info(`[URL Model Mapping] ${urlOriginalModel} -> ${urlNewModel}`)
       }
     }
 
-    // 6. Model Mapping (预留位置)
-    // 如果需要做模型映射，我们可以在这里把 matchedRule 挂载到 req 上
-    // 然后在 proxyReq 事件中修改 Body。
-    // 目前暂不实现复杂的 Body 修改，先跑通路由。
+    // 6. 构建基础 proxy options
+    const proxyOptions: httpProxy.ServerOptions = {
+      target: provider.baseUrl,
+      headers: this.buildAuthHeaders(host, provider)
+    }
 
-    this.proxy.web(req, res, proxyOptions)
+    // 7. 请求体模型映射处理 (OpenAI 风格)
+    const needsBodyParsing = this.shouldParseBody(req) && hasModelMappings && !urlMappingApplied
+
+    if (needsBodyParsing) {
+      try {
+        // 收集完整请求体
+        const bodyBuffer = await this.collectRequestBody(req)
+        const bodyString = bodyBuffer.toString('utf-8')
+
+        let finalBodyString = bodyString
+        let bodyMappingApplied = false
+        let bodyOriginalModel: string | undefined
+        let bodyNewModel: string | undefined
+
+        // 尝试解析并应用模型映射
+        if (bodyString.trim()) {
+          try {
+            const bodyJson = JSON.parse(bodyString)
+            const mappingResult = this.applyModelMapping(bodyJson, matchedRule.modelMappings)
+
+            if (mappingResult.modified) {
+              finalBodyString = JSON.stringify(mappingResult.body)
+              bodyMappingApplied = true
+              bodyOriginalModel = mappingResult.originalModel
+              bodyNewModel = mappingResult.newModel
+            }
+          } catch (parseErr) {
+            // JSON 解析失败，保持原始 body
+            log.warn(`[Model Mapping] Failed to parse JSON body: ${parseErr}`)
+          }
+        }
+
+        // 创建新的可读流作为请求体
+        const bodyStream = Readable.from([Buffer.from(finalBodyString, 'utf-8')])
+
+        // 更新 Content-Length (重要：body 大小可能已改变)
+        proxyOptions.headers = {
+          ...proxyOptions.headers,
+          'Content-Length': Buffer.byteLength(finalBodyString, 'utf-8').toString()
+        }
+
+        // 记录日志
+        if (bodyMappingApplied) {
+          log.info(
+            `[Route] ${req.method} https://${host}${url}  -->  ${provider.name} (${provider.baseUrl}) [Model: ${bodyOriginalModel} -> ${bodyNewModel}]`
+          )
+        } else {
+          log.info(
+            `[Route] ${req.method} https://${host}${url}  -->  ${provider.name} (${provider.baseUrl})`
+          )
+        }
+
+        // 使用 buffer 选项转发修改后的请求
+        this.proxy.web(req, res, {
+          ...proxyOptions,
+          buffer: bodyStream
+        })
+      } catch (err) {
+        log.error(`[Proxy] Error processing request body:`, err)
+        res.writeHead(500, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: 'Internal Proxy Error', details: (err as Error).message }))
+      }
+    } else {
+      // 无需 Body 模型映射，直接转发
+      // 日志中包含 URL 映射信息（如果有）
+      if (urlMappingApplied) {
+        log.info(
+          `[Route] ${req.method} https://${host}${url}  -->  ${provider.name} (${provider.baseUrl}) [Model: ${urlOriginalModel} -> ${urlNewModel}]`
+        )
+      } else {
+        log.info(
+          `[Route] ${req.method} https://${host}${url}  -->  ${provider.name} (${provider.baseUrl})`
+        )
+      }
+      this.proxy.web(req, res, proxyOptions)
+    }
   }
 
   public async stop(): Promise<void> {

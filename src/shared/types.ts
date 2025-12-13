@@ -1,7 +1,7 @@
 export interface Provider {
   id: string
   name: string
-  type: 'openai' | 'custom'
+  type: 'openai' | 'anthropic' | 'gemini' | 'custom'
   baseUrl: string
   apiKey?: string
 }
