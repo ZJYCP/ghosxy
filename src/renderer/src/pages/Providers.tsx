@@ -18,13 +18,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select'
 import { toast } from 'sonner'
 import { Provider } from 'src/shared/types'
 import { cn } from '@/lib/utils' // 确保引入 cn
@@ -175,7 +168,7 @@ export function ProvidersPage() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-card-foreground">{provider.name}</h3>
-                  <div className="flex items-center text-xs mt-0.5 space-x-2">
+                  <div className="flex items-center text-xs mt-0.5">
                     <span
                       className={cn(
                         'px-1.5 py-0.5 rounded text-[10px] uppercase font-medium tracking-wider border',
@@ -185,9 +178,6 @@ export function ProvidersPage() {
                       )}
                     >
                       {provider.apiKey ? t('providers.secured') : t('providers.no_auth')}
-                    </span>
-                    <span className="text-muted-foreground uppercase text-[10px]">
-                      {provider.type}
                     </span>
                   </div>
                 </div>
@@ -277,35 +267,20 @@ export function ProvidersPage() {
           </DialogHeader>
 
           <div className="grid gap-5 py-4">
-            {/* Name & Type */}
-            <div className="grid grid-cols-5 gap-4">
-              <div className="col-span-3 space-y-2">
-                <Label>
-                  {t('providers.dialog.provider_name')}{' '}
-                  <span className="text-destructive">{t('providers.dialog.provider_name_required')}</span>
-                </Label>
-                <Input
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder={t('providers.dialog.name_placeholder')}
-                  className="bg-background"
-                />
-              </div>
-              <div className="col-span-2 space-y-2">
-                <Label>{t('providers.dialog.type')}</Label>
-                <Select
-                  value={formData.type}
-                  onValueChange={(val: any) => setFormData({ ...formData, type: val })}
-                >
-                  <SelectTrigger className="bg-background">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="custom">{t('providers.dialog.type_custom')}</SelectItem>
-                    <SelectItem value="openai">{t('providers.dialog.type_openai')}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            {/* Name */}
+            <div className="space-y-2">
+              <Label>
+                {t('providers.dialog.provider_name')}{' '}
+                <span className="text-destructive">
+                  {t('providers.dialog.provider_name_required')}
+                </span>
+              </Label>
+              <Input
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder={t('providers.dialog.name_placeholder')}
+                className="bg-background"
+              />
             </div>
 
             {/* Base URL */}

@@ -128,7 +128,7 @@
       "type": "Type",
       "type_custom": "Custom",
       "type_openai": "OpenAI",
-      "base_url_required": "*",
+      "base_url_required": "Base url",
       "base_url_placeholder": "https://api.openai.com/v1",
       "base_url_note": "Must include protocol (http/https). Do not include trailing slash.",
       "api_key": "API Key (Optional)",
