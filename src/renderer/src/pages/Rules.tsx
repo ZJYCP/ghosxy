@@ -30,7 +30,7 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Provider, Rule } from 'src/shared/types'
 
-const PRESET_SOURCES = ['api.openai.com', 'api.anthropic.com', 'gemini.google.com']
+const PRESET_SOURCES = ['api.openai.com', 'api.anthropic.com', 'generativelanguage.googleapis.com']
 
 const DEFAULT_RULE_FORM: Omit<Rule, 'id'> = {
   isEnabled: true,

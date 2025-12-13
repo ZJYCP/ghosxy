@@ -64,17 +64,21 @@ app.whenReady().then(() => {
   })
 
   // 3. 【新增】Hosts 控制
-  // 这里硬编码了 api.openai.com，也可以让前端传过来
-  const TARGET_DOMAIN = 'api.openai.com'
-
+  // 动态读取所有已启用规则的域名
   ipcMain.handle('set-hosts', async () => {
-    // 调用 hostsService，将域名指向 127.0.0.1
-    return hostsService.set(TARGET_DOMAIN, '127.0.0.1')
+    const rules = storeService.getRules().filter((r) => r.isEnabled)
+    for (const rule of rules) {
+      await hostsService.set(rule.sourceHost, '127.0.0.1')
+    }
+    return true
   })
 
   ipcMain.handle('remove-hosts', async () => {
-    // 调用 hostsService，移除该域名的劫持
-    return hostsService.remove(TARGET_DOMAIN, '127.0.0.1')
+    const rules = storeService.getRules()
+    for (const rule of rules) {
+      await hostsService.remove(rule.sourceHost, '127.0.0.1')
+    }
+    return true
   })
 
   // --- Store IPC Handlers ---
@@ -101,9 +105,14 @@ app.whenReady().then(() => {
 
   // 聚合状态查询
   ipcMain.handle('app:get-status', async () => {
+    // 检查所有已启用规则的域名状态
+    const rules = storeService.getRules().filter((r) => r.isEnabled)
+    const hostsModified =
+      rules.length > 0 && rules.every((r) => hostsService.checkStatus(r.sourceHost))
+
     return {
       proxyRunning: proxyService.isRunning(),
-      hostsModified: hostsService.checkStatus('api.openai.com'), // 硬编码或读取配置
+      hostsModified,
       caGenerated: certService.isCaGenerated()
     }
   })
@@ -152,11 +161,13 @@ app.on('will-quit', async (event) => {
   try {
     // 尝试停止代理端口监听
     await proxyService.stop()
-    // 【重要】尝试移除 hosts 条目，防止用户下次开机连不上网
+    // 【重要】尝试移除所有规则的 hosts 条目，防止用户下次开机连不上网
     // 注意：这会弹窗要权限，体验稍差，但比断网好。
     // 如果想要无感，可以在 hostsService 里做检查：如果没修改过就不弹窗。
-    const TARGET_DOMAIN = 'api.openai.com'
-    await hostsService.remove(TARGET_DOMAIN, '127.0.0.1')
+    const rules = storeService.getRules()
+    for (const rule of rules) {
+      await hostsService.remove(rule.sourceHost, '127.0.0.1')
+    }
   } catch (e) {
     log.error('Cleanup failed:', e)
   }

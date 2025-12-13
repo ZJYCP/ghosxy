@@ -85,7 +85,7 @@ export class ProxyService {
    */
   private handleRequest(req: http.IncomingMessage, res: http.ServerResponse) {
     const host = req.headers.host?.split(':')[0] // 拿到域名 (去除端口)
-    const url = req.url
+    let url = req.url
 
     if (!host) {
       res.writeHead(400)
@@ -116,7 +116,16 @@ export class ProxyService {
       return
     }
 
-    // 4. 执行转发
+    // 4. 路径重写 - Gemini OpenAI 兼容模式
+    // 将 /v1beta/openai/* 重写为 /v1/*
+    if (url && url.includes('/v1beta/openai/')) {
+      const rewrittenUrl = url.replace('/v1beta/openai/', '/v1/')
+      log.info(`[Path Rewrite] ${url} --> ${rewrittenUrl}`)
+      url = rewrittenUrl
+      req.url = rewrittenUrl // 修改请求对象的 URL
+    }
+
+    // 5. 执行转发
     log.info(
       `[Route] ${req.method} https://${host}${url}  -->  ${provider.name} (${provider.baseUrl})`
     )
@@ -131,7 +140,7 @@ export class ProxyService {
       }
     }
 
-    // 5. Model Mapping (预留位置)
+    // 6. Model Mapping (预留位置)
     // 如果需要做模型映射，我们可以在这里把 matchedRule 挂载到 req 上
     // 然后在 proxyReq 事件中修改 Body。
     // 目前暂不实现复杂的 Body 修改，先跑通路由。
