@@ -51,7 +51,7 @@ export class SystemTrustService {
   /**
    * 根据平台选择正确的命令卸载根证书
    */
-  public untrust(certPath: string): Promise<void> {
+  public untrust(_certPath: string): Promise<void> {
     const platform = os.platform()
     let command: string
 

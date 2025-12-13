@@ -155,7 +155,7 @@ app.on('window-all-closed', () => {
 })
 
 // 当应用准备退出时 (无论是 Cmd+Q 还是窗口全关)
-app.on('will-quit', async (event) => {
+app.on('will-quit', async (_event) => {
   log.info('App is quitting, cleaning up...')
 
   // 这里有个小坑：will-quit 是同步的，如果我们要执行异步操作(如 sudo)，

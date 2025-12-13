@@ -2,9 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ShieldCheck,
-  ShieldAlert,
   Globe,
-  RefreshCw,
   Power,
   CheckCircle2,
   XCircle,

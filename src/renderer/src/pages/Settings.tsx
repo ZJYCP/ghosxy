@@ -1,7 +1,5 @@
-import { useState } from 'react'
-import { Monitor, Moon, Sun, Globe, Zap, Power, Shield } from 'lucide-react'
+import { Sun, Globe } from 'lucide-react'
 import { useTheme } from '@/components/theme-provider'
-import { Switch } from '@/components/ui/switch'
 import {
   Select,
   SelectContent,
@@ -16,13 +14,6 @@ import { useTranslation } from 'react-i18next'
 export function SettingsPage() {
   const { t, i18n } = useTranslation()
   const { theme, setTheme } = useTheme()
-
-  // 模拟一些本地状态 (实际开发中你应该连接 electron-store)
-  const [autoStart, setAutoStart] = useState(true)
-  const [silentStart, setSilentStart] = useState(false)
-  const [checkUpdate, setCheckUpdate] = useState(true)
-  const [language, setLanguage] = useState('zh-CN')
-  const [trayBehavior, setTrayBehavior] = useState('show')
 
   // 切换语言的处理函数
   const handleLanguageChange = (value: string) => {

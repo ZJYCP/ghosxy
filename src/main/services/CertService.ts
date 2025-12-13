@@ -112,7 +112,7 @@ export class CertService {
       }
     ])
 
-    cert.sign(this.caKey, forge.md.sha256.create())
+    cert.sign(this.caKey as forge.pki.rsa.PrivateKey, forge.md.sha256.create())
 
     return {
       cert: pki.certificateToPem(cert),

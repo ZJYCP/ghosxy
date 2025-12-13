@@ -80,11 +80,24 @@
     "vite": "^7.1.6"
   },
   "build": {
+    "appId": "com.ghosxy.proxy",
+    "productName": "Ghosxy",
     "extraResources": [
       {
         "from": "resources/hosts-helper.js",
         "to": "scripts/hosts-helper.js"
       }
-    ]
+    ],
+    "win": {
+      "target": ["nsis"],
+      "icon": "resources/icon.png",
+      "sign": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   }
 }
