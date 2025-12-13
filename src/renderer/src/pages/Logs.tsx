@@ -9,22 +9,24 @@ import { cn } from '@/lib/utils'
 export function LogsPage() {
   const [logs, setLogs] = useState<LogEntry[]>([])
   const viewportRef = useRef<HTMLDivElement>(null)
-  const [autoScroll, setAutoScroll] = useState(true)
+  const [autoScroll, setAutoScroll] = useState(false) // 默认关闭自动滚动,因为最新日志在顶部
 
-  // 1. 初始化
+  // 1. 初始化 - 加载历史日志并反转顺序(最新的在前)
   useEffect(() => {
-    window.electronAPI.getLogHistory().then(setLogs)
+    window.electronAPI.getLogHistory().then((history) => {
+      setLogs([...history].reverse()) // 反转数组,最新的在顶部
+    })
   }, [])
 
-  // 2. 监听
+  // 2. 监听新日志
   useEffect(() => {
     const removeListener = window.electronAPI.onLogUpdate((entry) => {
-      setLogs((prev) => [...prev, entry])
+      setLogs((prev) => [entry, ...prev]) // 将新日志添加到数组开头
     })
     return () => removeListener()
   }, [])
 
-  // 3. 自动滚动
+  // 3. 自动滚动到顶部 (最新日志)
   useEffect(() => {
     if (autoScroll && viewportRef.current) {
       // 这里的 selector 针对 Shadcn UI 的 ScrollArea 内部结构
@@ -32,7 +34,7 @@ export function LogsPage() {
         '[data-radix-scroll-area-viewport]'
       ) as HTMLElement
       if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight
+        scrollContainer.scrollTop = 0 // 滚动到顶部
       }
     }
   }, [logs, autoScroll])
