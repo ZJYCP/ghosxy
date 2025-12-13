@@ -4,7 +4,7 @@
 
 **Ghosxy** 是一个现代化的、可高度定制的本地优先 **AI 流量拦截与转发器**。
 
-它作为一个专门针对 LLM API 流量设计的中间人(MITM)代理工具,通过动态生成 SSL 证书并修改系统 Hosts 文件,Ghosxy 能够无缝拦截发往 `api.openai.com`(或其他任何 AI 服务商)的请求,并将其智能路由到你本地的模型(如 Ollama, LM Studio)或其他自定义的 API 渠道。
+它作为一个专门针对 LLM API 流量设计的中间人(MITM)代理工具,通过动态生成 SSL 证书并修改系统 Hosts 文件,Ghosxy 能够无缝拦截发往 OpenAI、Anthropic、Gemini 等 LLM API 服务商的请求,并将其智能路由到你本地的模型(如 Ollama, LM Studio)或其他自定义的 API 渠道。
 
 > **注意:** 本工具需要修改系统网络设置(Hosts 文件)并安装根证书。请务必阅读底部的 [免责声明](#免责声明)。
 
@@ -189,7 +189,7 @@ curl https://api.openai.com/v1/models \
 #### Trae 配置
 
 新增自定义模型，Ghosxy中配置key后，Trae的自定义模型的key可任意填写
-![Dashboard Preview](docs/images/trae_setting.png)
+![Trae Setting](docs/images/trae_setting.png)
 
 ### 常见操作
 
