@@ -5,5 +5,6 @@ out
 .eslintcache
 *.log*
 .bmad-core/
-.claude/commands/BMad/
 docs/
+CLAUDE.md
+.claude
