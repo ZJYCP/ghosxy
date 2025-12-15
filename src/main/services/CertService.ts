@@ -54,7 +54,7 @@ export class CertService {
     return credentials
   }
 
-  private ensureCA() {
+  public ensureCA() {
     // 优化：如果内存里已经有 CA 了，直接返回，不再读硬盘
     if (this.caCert && this.caKey) return
 

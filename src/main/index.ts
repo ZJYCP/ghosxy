@@ -59,6 +59,8 @@ app.whenReady().then(() => {
 
   // 2. 证书信任控制
   ipcMain.handle('trust-certificate', async () => {
+    // 确保 CA 证书已生成
+    certService.ensureCA()
     const path = certService.getCaPath()
     return systemTrustService.trust(path)
   })
