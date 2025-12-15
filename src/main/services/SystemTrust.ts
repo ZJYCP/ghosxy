@@ -18,12 +18,15 @@ export class SystemTrustService {
         command = `certutil.exe -addstore -f "ROOT" "${certPath}"`
         break
 
-      case 'darwin':
+      case 'darwin': {
         // macOS: 使用 security 命令
         // -k /Library/Keychains/System.keychain: 安装到系统钥匙串
         // -t: 信任设置 (trustRoot, trustAsRoot)
-        command = `security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "${certPath}"`
+        // 转义路径中的空格，sudo-prompt 通过 AppleScript 执行时需要
+        const escapedPath = certPath.replace(/ /g, '\\ ')
+        command = `security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ${escapedPath}`
         break
+      }
 
       case 'linux':
         // Linux: 复制到系统证书目录并更新
